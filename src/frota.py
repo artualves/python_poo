@@ -36,8 +36,3 @@ class Carro:
                 f'cor {self.cor}\n{self.odometro} Km, '
                 f'motor {self.motor_on}')
         return info
-
-
-
-
-
