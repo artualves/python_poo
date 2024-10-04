@@ -1,0 +1,6 @@
+Nome: jose
+RG: 234234-6
+CPF: 234734-6
+Titulo: 1
+Seção: 54
+Zona: 272
