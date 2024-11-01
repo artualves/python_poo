@@ -14,9 +14,9 @@ def menu():
     print("5-Iniciar Urna")
     print("6-Testar Urna")
     print("7-Sair")
-    op = int(input("Digite a opcao [1 a 7]? "))
+    op = int(input("Digite a opcao [1 a 7] "))
     while op not in range(1, 8):
-        op = int(input("Digite a opcao [1 a 7]? "))
+        op = int(input("Digite a opcao [1 a 7] "))
     return op
 
 def inserir_eleitor(eleitores):

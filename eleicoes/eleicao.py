@@ -1,8 +1,9 @@
 import pickle
+import csv
 from typing import List
 from common import *
-import csv
 from Interface_Eleicao import Transparencia
+from tkinter import *
 
 class Urna(Transparencia):
     mesario : Pessoa
@@ -78,3 +79,14 @@ if __name__ == "__main__":
     urna.to_csv()
     urna.to_txt()
     print(urna)
+
+interface = Tk()
+interface.title("Urna")
+
+lblEleitor = Label(interface, text="Eleitores")
+lblEleitor.grid(column=0, row=0)
+
+botaoEleitores = Button(interface, text="Visualizar", command=urna.get_eleitor)
+botaoEleitores.grid(column=0, row=1)
+
+interface.mainloop()
