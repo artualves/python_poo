@@ -4,7 +4,7 @@ from typing import List
 from common import *
 from Interface_Eleicao import Transparencia
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 class Urna(Transparencia):
     mesario : Pessoa
@@ -41,13 +41,19 @@ class Urna(Transparencia):
 
     def get_eleitores(self):
         return [eleitor.get_titulo() for eleitor in self.__eleitores]
+    
+    def verificar_candidato(self, numero):
+        return any(candidato.get_numero() == numero for candidato in self.__candidatos)
 
     def registrar_voto(self, eleitor : Eleitor, n_cand : int):
         self.__eleitores_presentes.append(eleitor)
-        if n_cand in self.__votos:
+        if n_cand == "NULO" or n_cand == "BRANCO":
             self.__votos[n_cand] += 1
         else:
-            self.__votos['NULO'] += 1
+            if n_cand in self.__votos:
+                self.__votos[n_cand] += 1
+            else:
+                self.__votos[n_cand] = 1
 
         with open(self.__nome_arquivo, 'wb') as arquivo:
             pickle.dump(self.__votos, arquivo)
@@ -74,48 +80,79 @@ class InterfaceUrna:
     def __init__(self, urna: Urna):
         self.urna = urna
 
-        # Inicialização da janela principal
         self.root = tk.Tk()
         self.root.title("Urna Eleitoral")
 
-        # Label para "Eleitores"
         lbl_eleitor = tk.Label(self.root, text="Eleitores")
         lbl_eleitor.pack(padx=10, pady=5)
 
-        # Combobox para listar os títulos dos eleitores
         self.eleitores_combobox = ttk.Combobox(self.root)
         self.eleitores_combobox.pack(padx=10, pady=10)
         
-        # Label para exibir zona e seção do eleitor selecionado
         self.dados_eleitor_label = tk.Label(self.root, text="Zona:\nSeção:")
         self.dados_eleitor_label.pack(padx=10, pady=5)
 
-        # Carregar eleitores na Combobox
+        lbl_candidato = tk.Label(self.root, text="Número do Candidato (00 para Nulo)")
+        lbl_candidato.pack(padx=10, pady=5)
+        
+        self.candidato_entry = tk.Entry(self.root)
+        self.candidato_entry.pack(padx=10, pady=10)
+
+        votar_button = tk.Button(self.root, text="Votar", command=self.registrar_voto)
+        votar_button.pack(padx=10, pady=10)
+
         self.carregar_eleitores()
 
-        # Configurar evento de seleção da Combobox
+        # Seleção da Combobox
         self.eleitores_combobox.bind("<<ComboboxSelected>>", self.exibir_dados_eleitor)
 
-        # Iniciar o loop principal da interface
         self.root.mainloop()
 
     def carregar_eleitores(self):
-        """Carrega os títulos dos eleitores na Combobox."""
-        eleitores_titulos = self.urna.get_eleitores()  # Obtém os títulos via Urna
+        eleitores_titulos = self.urna.get_eleitores()
         self.eleitores_combobox['values'] = eleitores_titulos
 
     def exibir_dados_eleitor(self, event):
-        """Exibe a zona e a seção do eleitor selecionado na Label."""
+        # Exibe a zona e a seção do eleitor selecionado na Label
         titulo_selecionado = self.eleitores_combobox.get()
         
-        # Encontrar o eleitor correspondente pelo título
         eleitor = next((eleitor for eleitor in self.urna._Urna__eleitores if eleitor.get_titulo() == int(titulo_selecionado)), None)
         
-        # Atualizar a Label com os dados do eleitor
         if eleitor:
             self.dados_eleitor_label.config(text=f"Zona: {eleitor.zona}\nSeção: {eleitor.secao}")
         else:
             self.dados_eleitor_label.config(text="Eleitor não encontrado")
+
+    def registrar_voto(self):
+        # Registra o voto do eleitor selecionado e limpa a interface
+        titulo_selecionado = self.eleitores_combobox.get()
+        numero_candidato = self.candidato_entry.get().strip()
+        
+        if not titulo_selecionado:
+            messagebox.showerror("Erro", "Por favor, selecione um eleitor.")
+            return
+        
+        # Encontrar o eleitor pelo título
+        eleitor = next((eleitor for eleitor in self.urna._Urna__eleitores if eleitor.get_titulo() == int(titulo_selecionado)), None)
+        
+        if numero_candidato == "00":
+            n_cand = "NULO"
+        else:
+            try:
+                n_cand = int(numero_candidato)
+                if not self.urna.verificar_candidato(n_cand):
+                    n_cand = "BRANCO"
+            except ValueError:
+                messagebox.showerror("Erro", "O número do candidato deve ser um número válido ou '00' para nulo.")
+                return
+
+        self.urna.registrar_voto(eleitor, n_cand)
+
+        self.eleitores_combobox.set('')
+        self.dados_eleitor_label.config(text="Zona:\nSeção:")
+        self.candidato_entry.delete(0, tk.END)
+
+        messagebox.showinfo("Voto Registrado", "Voto registrado com sucesso!")
 
 
 if __name__ == "__main__":
@@ -127,8 +164,8 @@ if __name__ == "__main__":
     e3 = Eleitor("eleitor3", "532234-6", "533734-6", 2342, 54, 272)
 
     urna = Urna(e3, 54, 272, [c1,c2], [e1,e2,e3])
-    app = InterfaceUrna(urna)
     urna.registrar_voto(e1, 99)
+    app = InterfaceUrna(urna)
     urna.to_csv()
     urna.to_txt()
     print(urna)
